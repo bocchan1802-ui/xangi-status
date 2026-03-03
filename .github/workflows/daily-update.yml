@@ -1,0 +1,64 @@
+name: Daily Status Update
+
+on:
+  schedule:
+    # JST 06:00 = UTC 21:00 (前日)
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update Date
+        run: |
+          TODAY=$(date +%Y.%m.%d)
+          sed -i "s/[0-9]\{4\}\.[0-9]\{2\}\.[0-9]\{2\}/$TODAY/g" index.html || true
+          sed -i "s/[0-9]\{4\}\.[0-9]\{2\}/$(date +%Y.%m)/g" index.html || true
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add index.html
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update status: $(date +%Y-%m-%d)"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xangi Architecture - Risograph Style</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .poster {
+            width: 1200px;
+            height: 850px;
+            background: #f5f0e8;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        }
+
+        /* リソグラフ風のテクスチャ */
+        .texture {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.15;
+            background-image:
+                repeating-linear-gradient(0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0,0,0,0.03) 2px,
+                    rgba(0,0,0,0.03) 4px
+                );
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.08;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 101;
+        }
+
+        /* カラーブロック - リソグラフ風 */
+        .color-block-cyan {
+            position: absolute;
+            background: #00d4aa;
+            mix-blend-mode: multiply;
+            opacity: 0.85;
+        }
+
+        .color-block-magenta {
+            position: absolute;
+            background: #ff006e;
+            mix-blend-mode: multiply;
+            opacity: 0.75;
+        }
+
+        .color-block-yellow {
+            position: absolute;
+            background: #ffbe0b;
+            mix-blend-mode: multiply;
+            opacity: 0.8;
+        }
+
+        .color-block-blue {
+            position: absolute;
+            background: #3a86ff;
+            mix-blend-mode: multiply;
+            opacity: 0.7;
+        }
+
+        .block1 { top: 0; left: 0; width: 45%; height: 100%; }
+        .block2 { top: -50px; right: 0; width: 60%; height: 400px; transform: skewY(-8deg); }
+        .block3 { bottom: 0; right: 0; width: 55%; height: 500px; }
+        .block4 { top: 200px; left: 30%; width: 200px; height: 200px; border-radius: 50%; }
+
+        /* ヘッダー */
+        .header {
+            position: absolute;
+            top: 40px;
+            left: 50px;
+            z-index: 10;
+        }
+
+        .header h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            color: #1a1a2e;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .header .title {
+            font-size: 72px;
+            font-weight: 900;
+            color: #1a1a2e;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            font-size: 18px;
+            font-weight: 400;
+            color: #333;
+            margin-top: 15px;
+            letter-spacing: 0.1em;
+        }
+
+        /* メインコンテンツエリア */
+        .main-content {
+            position: absolute;
+            top: 220px;
+            left: 50px;
+            right: 50px;
+            bottom: 100px;
+            z-index: 10;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 30px;
+        }
+
+        /* システムカード */
+        .system-card {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border: 3px solid #1a1a2e;
+            position: relative;
+        }
+
+        .system-card::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: -8px;
+            bottom: -8px;
+            background: #1a1a2e;
+            z-index: -1;
+        }
+
+        .system-card.cyan { border-color: #00d4aa; }
+        .system-card.cyan::before { background: #00d4aa; }
+
+        .system-card.magenta { border-color: #ff006e; }
+        .system-card.magenta::before { background: #ff006e; }
+
+        .system-card.yellow { border-color: #ffbe0b; }
+        .system-card.yellow::before { background: #ffbe0b; }
+
+        .card-number {
+            font-family: 'Space Mono', monospace;
+            font-size: 48px;
+            font-weight: 700;
+            color: #1a1a2e;
+            opacity: 0.3;
+            position: absolute;
+            top: 15px;
+            right: 20px;
+        }
+
+        .card-title {
+            font-size: 28px;
+            font-weight: 900;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            color: #666;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .card-description {
+            font-size: 13px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tech-tag {
+            font-family: 'Space Mono', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            background: #1a1a2e;
+            color: #fff;
+            letter-spacing: 0.05em;
+        }
+
+        .tech-tag.outline {
+            background: transparent;
+            color: #1a1a2e;
+            border: 2px solid #1a1a2e;
+        }
+
+        /* 接続線 */
+        .connections {
+            position: absolute;
+            top: 220px;
+            left: 50px;
+            right: 50px;
+            bottom: 100px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .connection-line {
+            position: absolute;
+            height: 3px;
+            background: #1a1a2e;
+            opacity: 0.3;
+        }
+
+        .line1 {
+            top: 50%;
+            left: 33.33%;
+            width: 33.33%;
+            transform: translateY(-50%);
+        }
+
+        /* フッター情報 */
+        .footer-info {
+            position: absolute;
+            bottom: 30px;
+            left: 50px;
+            right: 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 10;
+        }
+
+        .status-block {
+            display: flex;
+            gap: 40px;
+        }
+
+        .status-item {
+            font-family: 'Space Mono', monospace;
+        }
+
+        .status-label {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .date-block {
+            font-family: 'Space Mono', monospace;
+            text-align: right;
+        }
+
+        .date {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1;
+        }
+
+        .date-label {
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* 装飾要素 */
+        .deco-circle {
+            position: absolute;
+            border: 3px solid #1a1a2e;
+            border-radius: 50%;
+            opacity: 0.2;
+        }
+
+        .deco1 { top: 100px; right: 100px; width: 60px; height: 60px; }
+        .deco2 { bottom: 150px; left: 40%; width: 30px; height: 30px; background: #1a1a2e; }
+        .deco3 { top: 50%; right: 50px; width: 80px; height: 80px; border-style: dashed; }
+
+        .deco-line {
+            position: absolute;
+            background: #1a1a2e;
+            opacity: 0.15;
+        }
+
+        .dline1 { top: 180px; left: 0; width: 100%; height: 2px; }
+        .dline2 { top: 0; left: 400px; width: 2px; height: 100%; }
+
+        /* 印刷ずれエフェクト */
+        .misprint {
+            position: absolute;
+            color: #ff006e;
+            opacity: 0.4;
+            mix-blend-mode: multiply;
+            pointer-events: none;
+        }
+
+        .mp1 { top: 42px; left: 52px; }
+        .mp2 { top: 222px; left: 52px; }
+
+        /* レスポンシブ */
+        @media (max-width: 1240px) {
+            .poster {
+                transform: scale(0.8);
+                transform-origin: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <!-- テクスチャ -->
+        <div class="texture"></div>
+        <div class="noise"></div>
+
+        <!-- カラーブロック -->
+        <div class="color-block-cyan block1"></div>
+        <div class="color-block-magenta block2"></div>
+        <div class="color-block-yellow block3"></div>
+        <div class="color-block-blue block4"></div>
+
+        <!-- 装飾線 -->
+        <div class="deco-line dline1"></div>
+        <div class="deco-line dline2"></div>
+
+        <!-- 装飾円 -->
+        <div class="deco-circle deco1"></div>
+        <div class="deco-circle deco2"></div>
+        <div class="deco-circle deco3"></div>
+
+        <!-- ヘッダー -->
+        <div class="header">
+            <h1>System Architecture Map</h1>
+            <div class="title">XANGI<br>ECOSYSTEM</div>
+            <div class="subtitle">AI駆動型開発環境 / 2024-2026</div>
+        </div>
+
+        <!-- 印刷ずれエフェクト -->
+        <div class="misprint mp1">
+            <h1 style="font-family: 'Space Mono', monospace; font-size: 14px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase;">System Architecture Map</h1>
+        </div>
+
+        <!-- メインコンテンツ -->
+        <div class="main-content">
+            <!-- voice-line -->
+            <div class="system-card cyan">
+                <div class="card-number">01</div>
+                <div class="card-subtitle">Voice Chat Application</div>
+                <div class="card-title">voice-line</div>
+                <div class="card-description">
+                    Aivis Speechとwhisper.cppを組み合わせたローカル完結型ボイスチャットシステム。iOS対応のWeb UIを持ち、D1データベースで会話履歴を管理。
+                </div>
+                <div class="tech-stack">
+                    <span class="tech-tag">Aivis Speech</span>
+                    <span class="tech-tag">whisper.cpp</span>
+                    <span class="tech-tag outline">D1</span>
+                    <span class="tech-tag outline">iOS</span>
+                    <span class="tech-tag">FFmpeg</span>
+                </div>
+            </div>
+
+            <!-- xangi -->
+            <div class="system-card magenta">
+                <div class="card-number">02</div>
+                <div class="card-subtitle">Discord AI Agent</div>
+                <div class="card-title">xangi</div>
+                <div class="card-description">
+                    Discord上で動作するぼっちゃんのAIエージェント。HTTP APIサーバー、インタラクティブプロンプト、ボイスモード、スクリーンショットスキル、ResearchSkillを搭載。
+                </div>
+                <div class="tech-stack">
+                    <span class="tech-tag">Discord.js</span>
+                    <span class="tech-tag">Aivis TTS</span>
+                    <span class="tech-tag outline">Puppeteer</span>
+                    <span class="tech-tag outline">D1</span>
+                    <span class="tech-tag">HTTP API</span>
+                </div>
+            </div>
+
+            <!-- co-vibe -->
+            <div class="system-card yellow">
+                <div class="card-number">03</div>
+                <div class="card-subtitle">Multi-Provider AI Agent</div>
+                <div class="card-title">co-vibe</div>
+                <div class="card-description">
+                    Anthropic/OpenAI/Groq/Ollamaに対応したマルチプロバイダーAIコーディングエージェント。Qwen3.5:9bをデフォルトモデルとして採用。DeepResearch機能付き。
+                </div>
+                <div class="tech-stack">
+                    <span class="tech-tag">Python</span>
+                    <span class="tech-tag">Ollama</span>
+                    <span class="tech-tag outline">Qwen3.5:9b</span>
+                    <span class="tech-tag outline">DeepResearch</span>
+                    <span class="tech-tag">DuckDuckGo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- フッター情報 -->
+        <div class="footer-info">
+            <div class="status-block">
+                <div class="status-item">
+                    <div class="status-label">Status</div>
+                    <div class="status-value">OPERATIONAL</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Model</div>
+                    <div class="status-value">Qwen3.5:9b</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">Voice</div>
+                    <div class="status-value">Korosuke</div>
+                </div>
+            </div>
+            <div class="date-block">
+                <div class="date">2026.03</div>
+                <div class="date-label">LAST UPDATED</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
